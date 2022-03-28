@@ -349,22 +349,6 @@ inline constexpr auto is_floating_point_v<double> = true;
 template <>
 inline constexpr auto is_floating_point_v<long double> = true;
 
-#if defined(__clang__) or defined(_MSC_VER)
-template <class From, class To>
-static constexpr auto is_convertible_v = __is_convertible_to(From, To);
-#else
-template <class From, class To>
-constexpr auto is_convertible(int) -> decltype(bool(To(std::declval<From>()))) {
-  return true;
-}
-template <class...>
-constexpr auto is_convertible(...) {
-  return false;
-}
-template <class From, class To>
-constexpr auto is_convertible_v = is_convertible<From, To>(0);
-#endif
-
 template <bool>
 struct requires_ {};
 template <>
@@ -1381,7 +1365,7 @@ struct test {
 
   template <class Test,
             type_traits::requires_t<
-                not type_traits::is_convertible_v<Test, void (*)()>> = 0>
+                not std::is_convertible_v<Test, void (*)()>> = 0>
   constexpr auto operator=(Test _test) -> std::enable_if_t<std::is_invocable_v<Test>, Test> {
     on<Test>(events::test<Test>{.type = type,
                                 .name = name,
@@ -1397,7 +1381,7 @@ struct test {
   }
 
   template <class Test,
-            type_traits::requires_t<not type_traits::is_convertible_v<
+            type_traits::requires_t<not std::is_convertible_v<
                 Test, void (*)(std::string_view)>> = 0>
   constexpr auto operator=(Test _test)
       -> decltype(_test(std::declval<std::string_view>())) {
@@ -2029,7 +2013,7 @@ constexpr auto operator not(const T& t) {
 
 template <class TExpr, type_traits::requires_t<
                            type_traits::is_op_v<TExpr> or
-                           type_traits::is_convertible_v<TExpr, bool>> = 0>
+                           std::is_convertible_v<TExpr, bool>> = 0>
 constexpr auto expect(const TExpr& expr,
                       const reflection::source_location& sl =
                           reflection::source_location::current()) {
