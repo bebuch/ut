@@ -278,9 +278,13 @@ template <class T, class TValue>
 
 }  // namespace math
 
-namespace type_traits {
 template <class...>
-struct list {};
+class type_list_t{};
+
+template <class... T>
+inline constexpr auto type_list = type_list_t<T...>{};
+
+namespace type_traits {
 
 template <class T, class...>
 struct identity {
@@ -293,25 +297,25 @@ struct function_traits : function_traits<decltype(&T::operator())> {};
 template <class R, class... TArgs>
 struct function_traits<R (*)(TArgs...)> {
   using result_type = R;
-  using args = list<TArgs...>;
+  using args = type_list_t<TArgs...>;
 };
 
 template <class R, class... TArgs>
 struct function_traits<R(TArgs...)> {
   using result_type = R;
-  using args = list<TArgs...>;
+  using args = type_list_t<TArgs...>;
 };
 
 template <class R, class T, class... TArgs>
 struct function_traits<R (T::*)(TArgs...)> {
   using result_type = R;
-  using args = list<TArgs...>;
+  using args = type_list_t<TArgs...>;
 };
 
 template <class R, class T, class... TArgs>
 struct function_traits<R (T::*)(TArgs...) const> {
   using result_type = R;
-  using args = list<TArgs...>;
+  using args = type_list_t<TArgs...>;
 };
 
 template <class... Ts, class TExpr>
@@ -2193,7 +2197,7 @@ class steps {
 
       steps_.call_steps().emplace_back(
           pattern_, [expr, pattern = pattern_](const auto& _step) {
-            [=]<class... TArgs>(type_traits::list<TArgs...>) {
+            [=]<class... TArgs>(type_list_t<TArgs...>) {
               log << _step;
               auto i = 0u;
               const auto& ms = utility::match(pattern, _step);
