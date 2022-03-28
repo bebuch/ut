@@ -314,11 +314,9 @@ struct function_traits<R (T::*)(TArgs...) const> {
   using args = list<TArgs...>;
 };
 
-template <class T>
-T&& declval();
 template <class... Ts, class TExpr>
 constexpr auto is_valid(TExpr expr)
-    -> decltype(expr(declval<Ts...>()), bool()) {
+    -> decltype(expr(std::declval<Ts...>()), bool()) {
   return true;
 }
 template <class...>
@@ -332,7 +330,7 @@ static constexpr auto is_container_v =
 
 template <class T>
 static constexpr auto has_user_print =
-    is_valid<T>([](auto t) -> decltype(void(declval<std::ostringstream>() << t)) {});
+    is_valid<T>([](auto t) -> decltype(void(std::declval<std::ostringstream>() << t)) {});
 
 template <class T>
 static constexpr auto has_value_v =
@@ -356,7 +354,7 @@ template <class From, class To>
 static constexpr auto is_convertible_v = __is_convertible_to(From, To);
 #else
 template <class From, class To>
-constexpr auto is_convertible(int) -> decltype(bool(To(declval<From>()))) {
+constexpr auto is_convertible(int) -> decltype(bool(To(std::declval<From>()))) {
   return true;
 }
 template <class...>
@@ -1401,7 +1399,7 @@ struct test {
             type_traits::requires_t<not type_traits::is_convertible_v<
                 Test, void (*)(std::string_view)>> = 0>
   constexpr auto operator=(Test _test)
-      -> decltype(_test(type_traits::declval<std::string_view>())) {
+      -> decltype(_test(std::declval<std::string_view>())) {
     return _test(name);
   }
 };
