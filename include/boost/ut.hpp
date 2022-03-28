@@ -1543,7 +1543,7 @@ struct expect_ {
 
 namespace literals {
 [[nodiscard]] inline auto operator""_test(const char* name,
-                                          decltype(sizeof("")) size) {
+                                          const std::size_t size) {
   return detail::test{"test", std::string_view{name, size}};
 }
 
@@ -1666,7 +1666,7 @@ template <char... Cs>
       math::den_size<unsigned long long, Cs...>()>{};
 }
 
-constexpr auto operator""_b(const char* name, decltype(sizeof("")) size) {
+constexpr auto operator""_b(const char* name, const std::size_t size) {
   struct named : std::string_view, detail::op {
     using value_type = bool;
     [[nodiscard]] constexpr operator value_type() const { return true; }
@@ -2294,7 +2294,7 @@ class steps {
   steps_t steps_{};
   gherkin_t gherkin_{};
   call_steps_t call_steps_{};
-  decltype(sizeof("")) step_{};
+  std::size_t step_{};
 };
 }  // namespace gherkin
 }  // namespace bdd
