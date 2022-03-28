@@ -54,6 +54,7 @@ export import std;
 
 #include <array>
 #include <cstdint>
+#include <functional>
 #include <iostream>
 #include <sstream>
 #include <string_view>
@@ -76,50 +77,6 @@ export
 #endif
     namespace boost::inline ext::ut::inline v1_1_9 {
 namespace utility {
-template <class>
-class function;
-template <class R, class... TArgs>
-class function<R(TArgs...)> {
- public:
-  constexpr function() = default;
-  template <class T>
-  constexpr /*explicit(false)*/ function(T data)
-      : invoke_{invoke_impl<T>},
-        destroy_{destroy_impl<T>},
-        data_{new T{static_cast<T&&>(data)}} {}
-  constexpr function(function&& other) noexcept
-      : invoke_{static_cast<decltype(other.invoke_)&&>(other.invoke_)},
-        destroy_{static_cast<decltype(other.destroy_)&&>(other.destroy_)},
-        data_{static_cast<decltype(other.data_)&&>(other.data_)} {
-    other.data_ = {};
-  }
-  constexpr function(const function&) = delete;
-  ~function() { destroy_(data_); }
-
-  constexpr function& operator=(const function&) = delete;
-  constexpr function& operator=(function&&) = delete;
-  [[nodiscard]] constexpr auto operator()(TArgs... args) -> R {
-    return invoke_(data_, args...);
-  }
-  [[nodiscard]] constexpr auto operator()(TArgs... args) const -> R {
-    return invoke_(data_, args...);
-  }
-
- private:
-  template <class T>
-  [[nodiscard]] static auto invoke_impl(void* data, TArgs... args) -> R {
-    return (*static_cast<T*>(data))(args...);
-  }
-
-  template <class T>
-  static auto destroy_impl(void* data) -> void {
-    delete static_cast<T*>(data);
-  }
-
-  R (*invoke_)(void*, TArgs...){};
-  void (*destroy_)(void*){};
-  void* data_{};
-};
 
 [[nodiscard]] inline auto is_match(std::string_view input,
                                    std::string_view pattern) -> bool {
@@ -2217,7 +2174,7 @@ class steps {
   using step_t = std::string;
   using steps_t = void (*)(steps&);
   using gherkin_t = std::vector<step_t>;
-  using call_step_t = utility::function<void(const std::string&)>;
+  using call_step_t = std::function<void(const std::string&)>;
   using call_steps_t = std::vector<std::pair<step_t, call_step_t>>;
 
   class step {
