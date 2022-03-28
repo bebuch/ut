@@ -286,11 +286,6 @@ inline constexpr auto type_list = type_list_t<T...>{};
 
 namespace type_traits {
 
-template <class T, class...>
-struct identity {
-  using type = T;
-};
-
 template <class T>
 struct function_traits : function_traits<decltype(&T::operator())> {};
 
@@ -1347,10 +1342,9 @@ struct tag {
   std::vector<std::string_view> name{};
 };
 
-template <class... Ts, class TEvent>
+template <class..., class TEvent>
 [[nodiscard]] constexpr decltype(auto) on(TEvent&& event) {
-  return ut::cfg<typename type_traits::identity<override, Ts...>::type>.on(
-      static_cast<TEvent&&>(event));
+  return ut::cfg<override>.on(static_cast<TEvent&&>(event));
 }
 
 template <class Test>
@@ -1384,8 +1378,7 @@ struct test {
   template <class Test,
             type_traits::requires_t<
                 not type_traits::is_convertible_v<Test, void (*)()>> = 0>
-  constexpr auto operator=(Test _test) ->
-      typename type_traits::identity<Test, decltype(_test())>::type {
+  constexpr auto operator=(Test _test) -> std::enable_if_t<std::is_invocable_v<Test>, Test> {
     on<Test>(events::test<Test>{.type = type,
                                 .name = name,
                                 .tag = tag,
