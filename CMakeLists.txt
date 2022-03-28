@@ -55,11 +55,7 @@ add_library(ut INTERFACE)
 set(INCLUDE_INSTALL_DIR include/${PROJECT_NAME}-${PROJECT_VERSION}/include)
 # XXX variant: set(INCLUDE_INSTALL_DIR include)
 target_include_directories(ut INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:${INCLUDE_INSTALL_DIR}>)
-if(APPLE)
-  target_compile_features(ut INTERFACE cxx_std_20)
-else()
-  target_compile_features(ut INTERFACE cxx_std_17)
-endif()
+target_compile_features(ut INTERFACE cxx_std_20)
 
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   if(WIN32) # clang-cl
@@ -68,6 +64,8 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
       ut
       INTERFACE -Wall
                 -Wextra
+                -Wpedantic
+                -Wconversion
                 # FIXME -Werror
                 -Wno-c++98-c++11-c++14-c++17-compat-pedantic
                 -Wno-c++98-c++11-compat

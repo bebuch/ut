@@ -56,6 +56,7 @@ export import std;
 #include <cstdint>
 #include <functional>
 #include <iostream>
+#include <ranges>
 #include <sstream>
 #include <string_view>
 #include <utility>
@@ -477,6 +478,14 @@ struct summary {};
 }  // namespace events
 
 namespace detail {
+template<class T>
+concept printable = requires(T const& v) {
+  { std::declval<std::ostream&>() << v } -> std::convertible_to<std::ostream&>;
+};
+
+template<class R>
+concept non_printable_range = not printable<R> and std::ranges::input_range<R>;
+
 struct op {};
 struct fatal {};
 struct cfg {
@@ -899,21 +908,16 @@ class printer {
   printer() = default;
   /*explicit(false)*/ printer(const colors colors) : colors_{colors} {}
 
-  template <class T>
-  auto& operator<<(const T& t) {
-    out_ << detail::get(t);
+  auto& operator<<(detail::printable auto const& v) {
+    out_ << detail::get(v);
     return *this;
   }
 
-  template <class T,
-            type_traits::requires_t<not type_traits::has_user_print<T> and
-                                    type_traits::is_container_v<T>> = 0>
-  auto& operator<<(T&& t) {
+  auto& operator<<(detail::non_printable_range auto const& v) {
     *this << '{';
-    auto first = true;
-    for (const auto& arg : t) {
-      *this << (first ? "" : ", ") << arg;
-      first = false;
+    if(!v.empty()){
+      *this << v.front();
+      std::for_each(std::next(v.begin()), v.end(), [this](detail::printable auto const& v){ *this << ", " << v; });
     }
     *this << '}';
     return *this;
