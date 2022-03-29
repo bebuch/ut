@@ -340,15 +340,6 @@ template <class T>
 static constexpr auto has_epsilon_v =
     is_valid<T>([](auto t) -> decltype(void(t.epsilon)) {});
 
-template <class T>
-inline constexpr auto is_floating_point_v = false;
-template <>
-inline constexpr auto is_floating_point_v<float> = true;
-template <>
-inline constexpr auto is_floating_point_v<double> = true;
-template <>
-inline constexpr auto is_floating_point_v<long double> = true;
-
 }  // namespace type_traits
 
 struct none {};
@@ -520,7 +511,7 @@ struct value : op {
 };
 
 template <class T>
-struct value<T, std::enable_if_t<type_traits::is_floating_point_v<T>>>
+struct value<T, std::enable_if_t<std::is_floating_point_v<T>>>
     : op {
   using value_type = T;
   static inline auto epsilon = T{};
