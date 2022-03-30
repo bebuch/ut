@@ -166,13 +166,33 @@ namespace ut{
         }
 
     protected:
-        void print(std::ostream& os)const{
+        void print(
+            std::ostream& os,
+            std::string_view const color,
+            bool const print_results,
+            bool const print_types
+        )const{
+            static constexpr auto const type_name = []{
+                if constexpr(concepts::constant<T>){
+                    return detail::type_name<typename T::value_type>();
+                }else{
+                    return detail::type_name<T>();
+                }
+            }();
+
+            if(print_types){
+                os << "<" << type_name << ">(";
+            }
+            os << color;
             if constexpr(std::convertible_to<T const&, std::string_view const&>){
                 os << std::quoted(static_cast<std::string_view const&>(value_));
             }else{
                 os << value_;
             }
             os << detail::format::reset;
+            if(print_types){
+                os << ")";
+            }
         }
 
     private:
@@ -193,9 +213,8 @@ namespace ut{
 
         value(detail::constant<T> const& v) = delete;
 
-        void print(std::ostream& os, bool const pass)const{
-            os << detail::format::color(pass);
-            basic_value<T>::print(os);
+        void print(std::ostream& os, bool const pass, bool const print_results, bool const print_types)const{
+            basic_value<T>::print(os, detail::format::color(pass), print_results, print_types);
         }
     };
 
@@ -215,9 +234,8 @@ namespace ut{
             : basic_value<T>(v())
             {}
 
-        void print(std::ostream& os, bool const pass)const{
-            os << detail::format::ref;
-            basic_value<T>::print(os);
+        void print(std::ostream& os, bool const pass, bool const print_results, bool const print_types)const{
+            basic_value<T>::print(os, detail::format::ref, print_results, print_types);
         }
     };
 
@@ -279,8 +297,13 @@ namespace ut{
             << detail::format::color(pass)
             << (pass ? "pass"sv : "fail"sv)
             << detail::format::reset << ": ";
-        expr.print(std::cout, pass);
+        expr.print(std::cout, pass, false, false);
         std::cout << "\n";
+        if(!pass){
+            std::cout << "      "; expr.print(std::cout, pass, true, false); std::cout << "\n";
+            std::cout << "      "; expr.print(std::cout, pass, false, true); std::cout << "\n";
+            std::cout << "      "; expr.print(std::cout, pass, true, true);  std::cout << "\n";
+        }
         std::cout.flags(flags);
     }
 
@@ -312,7 +335,7 @@ namespace ut{
             return a_() == b_();
         }
 
-        void print(std::ostream& os, bool const pass)const{
+        void print(std::ostream& os, bool const pass, bool const print_results, bool const print_types)const{
             bool const sub_pass =
                 [this, pass]{
                     if constexpr(std::is_same_v<std::remove_cvref_t<decltype((*this)())>, bool>){
@@ -322,20 +345,22 @@ namespace ut{
                     }
                 }();
             os << "(";
-            a_.print(os, sub_pass);
+            a_.print(os, sub_pass, print_results, print_types);
             os << (sub_pass ? detail::format::pass : detail::format::fail) << " == " << detail::format::reset;
-            b_.print(os, sub_pass);
-            os << " => ";
-            auto const to_expression =
-                [](concepts::non_expression auto const& v){
-                    if constexpr(is_expected_only()){
-                        return expected(v);
-                    }else{
-                        return value(v);
-                    }
-                };
+            b_.print(os, sub_pass, print_results, print_types);
+            if(print_results){
+                os << " => ";
+                auto const to_expression =
+                    [](concepts::non_expression auto const& v){
+                        if constexpr(is_expected_only()){
+                            return expected(v);
+                        }else{
+                            return value(v);
+                        }
+                    };
 
-            to_expression((*this)()).print(os, sub_pass);
+                to_expression((*this)()).print(os, sub_pass, print_results, print_types);
+            }
             os << ")";
         }
 
