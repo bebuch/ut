@@ -41,6 +41,7 @@ namespace ut::detail{
         static constexpr auto pass = "\033[92m";
         static constexpr auto fail = "\033[91m";
         static constexpr auto ref = "\033[94m";
+        static constexpr auto sum = "\033[93m";
         static constexpr auto reset = "\033[0m";
 
         static constexpr std::string_view color(bool const passed)noexcept{
@@ -279,11 +280,13 @@ namespace ut{
         }
 
         void print(std::ostream& os, bool const)const{
-            auto const pass = (*this)();
+            auto const pass = static_cast<bool>((*this)());
             os << "(";
             a_.print(os, pass);
-            os << " == ";
+            os << (pass ? detail::format::pass : detail::format::fail) << " == " << detail::format::reset;
             b_.print(os, pass);
+            os << " => ";
+            os << detail::format::sum << pass << detail::format::reset;
             os << ")";
         }
 
